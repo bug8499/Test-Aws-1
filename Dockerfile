@@ -2,7 +2,7 @@
 #  Multi-Domain Static Site
 #  Domains: main.yourdomain.com / dev.yourdomain.com
 # ─────────────────────────────────────────
-FROM nginx:alpine
+FROM nginx:1.27-alpine
  
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf

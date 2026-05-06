@@ -1,0 +1,32 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push web image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest
+
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest
+            docker stop multi-domain-web || true
+            docker rm multi-domain-web || true
+            docker run -d --name multi-domain-web -p 80:80 --restart unless-stopped ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest
