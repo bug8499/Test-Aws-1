@@ -8,7 +8,7 @@ FROM nginx:1.27-alpine
 
 RUN rm /etc/nginx/conf.d/default.conf
 
-COPY nginx/site.conf /etc/nginx/conf.d/site.conf
+COPY nginx/nginx.conf /etc/nginx/conf.d/site.conf
 COPY index.html /usr/share/nginx/html/index.html
 
 EXPOSE 80
