@@ -1,7 +1,37 @@
+# Reference compose file describing the runtime topology on EC2.
+# Workflows deploy each container individually with `docker run` so
+# they can be rebuilt independently per branch — this file is here
+# for documentation and local testing.
+#
+# DOCKER_USERNAME must be set in the shell env when running locally.
+
 services:
-  web:
-    build: .
-    container_name: multi-domain-web
+  proxy:
+    image: ${DOCKER_USERNAME}/multi-domain-proxy:latest
+    container_name: proxy
     ports:
       - "80:80"
+    networks:
+      - webnet
     restart: unless-stopped
+    depends_on:
+      - web-main
+      - web-dev
+
+  web-main:
+    image: ${DOCKER_USERNAME}/multi-domain-web:main
+    container_name: web-main
+    networks:
+      - webnet
+    restart: unless-stopped
+
+  web-dev:
+    image: ${DOCKER_USERNAME}/multi-domain-web:development
+    container_name: web-dev
+    networks:
+      - webnet
+    restart: unless-stopped
+
+networks:
+  webnet:
+    driver: bridge
