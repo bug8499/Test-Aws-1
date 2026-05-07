@@ -1,24 +1,56 @@
-name: Deploy to EC2
+# name: Deploy development to EC2
+
+# on:
+#   push:
+#     branches: [development]
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
+
+#       - uses: docker/login-action@v3
+#         with:
+#           username: ${{ secrets.DOCKER_USERNAME }}
+#           password: ${{ secrets.DOCKER_TOKEN }}
+
+#       - name: Build and push web-dev image
+#         run: |
+#           docker build -t ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:development .
+#           docker push ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:development
+
+#       - uses: appleboy/ssh-action@v1
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ubuntu
+#           key: ${{ secrets.EC2_SSH_KEY }}
+#           script: |
+#             docker pull ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest
+#             docker stop multi-domain-web || true
+#             docker rm multi-domain-web || true
+#             docker run -d --name multi-domain-web -p 80:80 --restart unless-stopped ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest
+name: Deploy development to EC2
 
 on:
   push:
-    branches: [main, development]
+    branches: [development]                    # ← trigger เฉพาะ branch นี้
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Build and push web image
+      - name: Build and push web-dev image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:development .
+          docker push ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:development
 
       - uses: appleboy/ssh-action@v1
         with:
@@ -26,7 +58,16 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest
-            docker stop multi-domain-web || true
-            docker rm multi-domain-web || true
-            docker run -d --name multi-domain-web -p 80:80 --restart unless-stopped ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:latest
+            set -e
+            DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
+
+            docker network create webnet 2>/dev/null || true
+
+            docker pull "$DOCKER_USERNAME/multi-domain-web:development"
+            docker stop web-dev 2>/dev/null || true
+            docker rm   web-dev 2>/dev/null || true
+            docker run -d \
+              --name web-dev \
+              --network webnet \
+              --restart unless-stopped \
+              "$DOCKER_USERNAME/multi-domain-web:development"
