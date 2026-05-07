@@ -1,0 +1,42 @@
+name: Deploy main + proxy to EC2
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push web-main image
+        run: |
+          docker build \
+            --build-arg ENV_LABEL=Main \
+            --build-arg ENV_LONG=production \
+            --build-arg ENV_DOMAIN=main \
+            -t ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:main .
+          docker push ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:main
+
+      - name: Build and push proxy image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/multi-domain-proxy:latest ./proxy
+          docker push ${{ secrets.DOCKER_USERNAME }}/multi-domain-proxy:latest
+
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
+
+            # Shared network so the proxy can reach web-main / web-dev by name.
+            docker network create webnet 2>/dev/null || true

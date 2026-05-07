@@ -17,7 +17,11 @@ jobs:
 
       - name: Build and push web-dev image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:development .
+          docker build \
+            --build-arg ENV_LABEL=Dev \
+            --build-arg ENV_LONG=development \
+            --build-arg ENV_DOMAIN=dev \
+            -t ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:development .
           docker push ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:development
 
       - uses: appleboy/ssh-action@v1
