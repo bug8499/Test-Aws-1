@@ -42,4 +42,4 @@ jobs:
               --name web-dev \
               --network webnet \
               --restart unless-stopped \
-              "$DOCKER_USERNAME/multi-domain-web:development
+              "$DOCKER_USERNAME/multi-domain-web:development"
