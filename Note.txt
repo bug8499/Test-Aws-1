@@ -1,0 +1,11 @@
+nginx.conf
+
+ใช้ nip.io ง่ายสุด ไม่ต้องสมัคร — แค่เปลี่ยนเป็น:
+server_name main.<EC2_IP>.nip.io;
+server_name dev.<EC2_IP>.nip.io;
+
+เช่น ถ้า EC2 IP = 13.250.45.123:
+server_name main.13.250.45.123.nip.io;
+server_name dev.13.250.45.123.nip.io;
+
+
