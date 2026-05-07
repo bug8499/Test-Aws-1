@@ -9,3 +9,23 @@ server_name main.13.250.45.123.nip.io;
 server_name dev.13.250.45.123.nip.io;
 
 
+การสร้าง Server ขึ้น AWS EC2 โดยผ่านตัว GitHub Action
+1. ไฟล์ที่ต้องมีในการทำ
+    - .github\workflows\deploy.yml
+    - nginx\nginx.conf
+    - Dockerfile
+2. ตั้งค่าสร้าง Serveer EC2
+    - Security Group 
+        Inbound -> SSH(IPv4), HTTP(IPv4)
+        Outbound -> AllTraffic(IPv4)
+3. ทำ ssh เชื่อมเข้า Terminal ของ EC2
+    # ครั้งแรกเท่านั้น — ตั้ง permission ของ key
+    - icacls "C:\Users\ADMIN\Downloads\my-key.pem" /inheritance:r
+    - icacls "C:\Users\ADMIN\Downloads\my-key.pem" /grant:r "$($env:USERNAME):R"
+    # SSH (ครั้งนี้และครั้งต่อๆ ไป ใช้แค่บรรทัดนี้)
+    - ssh -i "C:\Users\ADMIN\Downloads\my-key.pem" ubuntu@13.250.45.123
+4. ลง Docker ใน EC2
+    - sudo apt update
+    - sudo apt install -y docker.io
+    - sudo systemctl enable --now docker
+    - sudo usermod -aG docker $USER
