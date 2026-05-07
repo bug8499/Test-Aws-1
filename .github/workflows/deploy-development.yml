@@ -1,0 +1,45 @@
+name: Deploy development to EC2
+
+on:
+  push:
+    branches: [development]                    # ← trigger เฉพาะ branch นี้
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push web-dev image
+        run: |
+          docker build \
+            --build-arg ENV_LABEL=Dev \
+            --build-arg ENV_LONG=development \
+            --build-arg ENV_DOMAIN=dev \
+            -t ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:development .
+          docker push ${{ secrets.DOCKER_USERNAME }}/multi-domain-web:development
+
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
+
+            docker network create webnet 2>/dev/null || true
+
+            docker pull "$DOCKER_USERNAME/multi-domain-web:development"
+            docker stop web-dev 2>/dev/null || true
+            docker rm   web-dev 2>/dev/null || true
+            docker run -d \
+              --name web-dev \
+              --network webnet \
+              --restart unless-stopped \
+              "$DOCKER_USERNAME/multi-domain-web:development
